@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐎 야생마블 — 야생마 동아리 술게임</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── 시작 설정 화면 ─────────────────────────── -->
+  <section id="setup-screen" class="screen active">
+    <header class="setup-header">
+      <h1 class="logo">🐎 야생마블</h1>
+      <p class="tagline">야생마 동아리 전용 주루마블 — 보드도 카드도 필요 없이 링크 하나로!</p>
+    </header>
+
+    <div class="setup-grid">
+      <div class="card">
+        <h2>1️⃣ 참가자 <span id="player-count" class="count-badge">0명</span></h2>
+        <div class="row">
+          <input id="player-name" placeholder="이름 입력 후 Enter" maxlength="8" autocomplete="off">
+          <button id="add-player" class="btn">추가</button>
+        </div>
+        <div id="player-chips" class="chips"></div>
+        <p class="hint">최소 2명 · 최대 8명</p>
+      </div>
+
+      <div class="card">
+        <h2>2️⃣ 미션팩</h2>
+        <div id="pack-list" class="options"></div>
+      </div>
+
+      <div class="card">
+        <h2>3️⃣ 벌칙 강도</h2>
+        <div id="intensity-list" class="options"></div>
+        <h2 class="mt">4️⃣ 종료 조건</h2>
+        <div id="end-list" class="options"></div>
+      </div>
+    </div>
+
+    <button id="start-btn" class="big-btn" disabled>참가자를 2명 이상 추가하세요</button>
+    <p class="footnote">⚠️ 즐거운 음주는 적당히! 순한맛에는 무알콜 대체 미션이 포함되어 있어요.</p>
+  </section>
+
+  <!-- ── 메인 플레이 화면 ─────────────────────────── -->
+  <section id="game-screen" class="screen">
+    <div class="game-layout">
+      <div id="board" class="board">
+        <div class="board-center">
+          <!-- 🐎 야생마 필드: 중앙을 뛰어다니는 말들 -->
+          <div class="horse-field" aria-hidden="true">
+            <div class="horse h1"><span>🐎</span></div>
+            <div class="horse h2"><span>🐎</span></div>
+            <div class="horse h3"><span>🐎</span></div>
+          </div>
+          <div class="center-brand">🐎 야생마블</div>
+          <div id="turn-banner" class="turn-banner"></div>
+          <div id="dice" class="dice">🎲</div>
+          <button id="roll-btn" class="big-btn">주사위 굴리기 🎲</button>
+          <div id="toast" class="toast"></div>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <h2>🏆 리더보드</h2>
+        <div id="leaderboard" class="leaderboard"></div>
+        <div id="pot" class="pot"></div>
+        <div id="progress" class="progress"></div>
+        <div class="sidebar-btns">
+          <button id="sound-btn" class="btn ghost">🔊 사운드 ON</button>
+          <button id="skip-turn-btn" class="btn ghost">⏭️ 턴 넘기기</button>
+          <button id="end-game-btn" class="btn danger">🏁 게임 종료</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ── 결과 화면 ─────────────────────────── -->
+  <section id="result-screen" class="screen">
+    <h1 class="result-title">🎉 오늘의 결과</h1>
+    <div id="mvp" class="mvp"></div>
+    <div class="result-grid">
+      <div class="card">
+        <h2>📊 벌칙 통계</h2>
+        <div id="stats"></div>
+      </div>
+      <div class="card">
+        <h2>📰 오늘의 사건 요약</h2>
+        <div id="highlights" class="highlights"></div>
+      </div>
+    </div>
+    <div class="row center">
+      <button id="replay-btn" class="big-btn">같은 멤버로 다시하기 🔄</button>
+      <button id="new-btn" class="big-btn ghost">처음부터</button>
+    </div>
+  </section>
+
+  <!-- ── 팝업/룰렛 오버레이 ─────────────────────────── -->
+  <div id="overlay" class="overlay hidden">
+    <div id="overlay-card" class="overlay-card"></div>
+  </div>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
