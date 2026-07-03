@@ -17,24 +17,26 @@
 
     <div class="setup-grid">
       <div class="card">
-        <h2>1️⃣ 참가자 <span id="player-count" class="count-badge">0명</span></h2>
+        <h2>1️⃣ 진행 방식</h2>
+        <div id="mode-list" class="options inline"></div>
+        <h2 class="mt" id="player-heading">2️⃣ 참가자 <span id="player-count" class="count-badge">0명</span></h2>
         <div class="row">
           <input id="player-name" placeholder="이름 입력 후 Enter" maxlength="8" autocomplete="off">
           <button id="add-player" class="btn">추가</button>
         </div>
         <div id="player-chips" class="chips"></div>
-        <p class="hint">최소 2명 · 최대 8명</p>
+        <p class="hint" id="player-hint">최소 2명 · 최대 8명</p>
       </div>
 
       <div class="card">
-        <h2>2️⃣ 미션팩</h2>
+        <h2>3️⃣ 미션팩</h2>
         <div id="pack-list" class="options"></div>
       </div>
 
       <div class="card">
-        <h2>3️⃣ 벌칙 강도</h2>
+        <h2>4️⃣ 벌칙 강도</h2>
         <div id="intensity-list" class="options"></div>
-        <h2 class="mt">4️⃣ 종료 조건</h2>
+        <h2 class="mt">5️⃣ 종료 조건</h2>
         <div id="end-list" class="options"></div>
       </div>
     </div>

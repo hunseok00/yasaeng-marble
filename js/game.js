@@ -2,6 +2,7 @@
 import {
   PACKS, PENALTIES, CHANCE_CARDS, ALL_EVENTS, SURPRISE_EVENTS,
   CHANTS, CELL_TYPES, BOARD, CORNERS, PLAYER_COLORS,
+  TEAM_MISSIONS, PENALTIES_TEAM,
 } from './data.js';
 import { audio } from './audio.js';
 import { Roulette } from './roulette.js';
@@ -15,7 +16,8 @@ const HOST_WEIGHT = 0.35;   // 지목 룰렛의 진행자 조각 가중치 (참�
 
 // ── 상태 ──────────────────────────────
 const state = {
-  players: [],        // {name, color, pos, laps, hits, maxStreak, streak, immunity}
+  players: [],        // {name, color, pos, laps, hits, maxStreak, streak, immunity} — 팀전에서는 1항목 = 1팀
+  mode: 'solo',       // 'solo' 개인전 | 'team' 팀전
   packId: 'basic',
   intensity: 2,       // 1 순한맛 / 2 보통 / 3 매운맛
   end: { type: 'laps', value: 2 },
@@ -31,6 +33,11 @@ const state = {
 // ══════════════════════════════════════
 // 1. 시작 설정 화면
 // ══════════════════════════════════════
+const MODES = [
+  { v: 'solo', label: '🙋 개인전', desc: '각자 말을 놓고 진행' },
+  { v: 'team', label: '👥 팀전', desc: '팀 단위 말·미션으로 진행' },
+];
+
 const INTENSITIES = [
   { v: 1, label: '😇 순한맛', desc: '벌주 = 한 모금 (무알콜 OK)' },
   { v: 2, label: '😀 보통', desc: '벌주 = 반 잔' },
@@ -44,16 +51,41 @@ const END_OPTIONS = [
 ];
 
 function renderSetup() {
-  // 미션팩
+  const isTeam = state.mode === 'team';
+
+  // 진행 방식 (개인전/팀전)
+  const modeList = $('#mode-list');
+  modeList.innerHTML = '';
+  MODES.forEach((m) => {
+    const btn = document.createElement('button');
+    btn.className = 'option' + (state.mode === m.v ? ' selected' : '');
+    btn.innerHTML = `${m.label}<small>${m.desc}</small>`;
+    btn.onclick = () => { audio.click(); state.mode = m.v; renderSetup(); };
+    modeList.appendChild(btn);
+  });
+
+  // 팀전 여부에 따라 참가자 입력 문구 전환
+  $('#player-heading').firstChild.textContent = isTeam ? '2️⃣ 팀 ' : '2️⃣ 참가자 ';
+  $('#player-name').placeholder = isTeam ? '팀 이름 입력 후 Enter' : '이름 입력 후 Enter';
+  $('#player-hint').textContent = isTeam ? '최소 2팀 · 최대 8팀 (예: 1조, 흑마팀…)' : '최소 2명 · 최대 8명';
+
+  // 미션팩 — 팀전은 전용 팀 미션팩 자동 적용
   const packList = $('#pack-list');
   packList.innerHTML = '';
-  Object.entries(PACKS).forEach(([id, pack]) => {
-    const btn = document.createElement('button');
-    btn.className = 'option' + (state.packId === id ? ' selected' : '');
-    btn.innerHTML = `${pack.emoji} ${pack.name}<small>${pack.desc} · 미션 ${pack.missions.length}개</small>`;
-    btn.onclick = () => { audio.click(); state.packId = id; renderSetup(); };
-    packList.appendChild(btn);
-  });
+  if (isTeam) {
+    const note = document.createElement('div');
+    note.className = 'option selected';
+    note.innerHTML = `👥 팀 미션팩<small>팀 대결·단체 수행 미션 ${TEAM_MISSIONS.length}개가 자동 적용됩니다</small>`;
+    packList.appendChild(note);
+  } else {
+    Object.entries(PACKS).forEach(([id, pack]) => {
+      const btn = document.createElement('button');
+      btn.className = 'option' + (state.packId === id ? ' selected' : '');
+      btn.innerHTML = `${pack.emoji} ${pack.name}<small>${pack.desc} · 미션 ${pack.missions.length}개</small>`;
+      btn.onclick = () => { audio.click(); state.packId = id; renderSetup(); };
+      packList.appendChild(btn);
+    });
+  }
 
   // 강도
   const intList = $('#intensity-list');
@@ -96,17 +128,20 @@ function renderChips() {
     chip.onclick = () => { state.players.splice(i, 1); renderChips(); };
     chips.appendChild(chip);
   });
-  $('#player-count').textContent = `${state.players.length}명`;
+  const unit = state.mode === 'team' ? '팀' : '명';
+  $('#player-count').textContent = `${state.players.length}${unit}`;
   const startBtn = $('#start-btn');
   startBtn.disabled = state.players.length < 2;
-  startBtn.textContent = state.players.length < 2 ? '참가자를 2명 이상 추가하세요' : '게임 시작! 🎲';
+  startBtn.textContent = state.players.length < 2
+    ? (state.mode === 'team' ? '팀을 2팀 이상 추가하세요' : '참가자를 2명 이상 추가하세요')
+    : '게임 시작! 🎲';
 }
 
 function addPlayer() {
   const input = $('#player-name');
   const name = input.value.trim();
   if (!name) return;
-  if (state.players.length >= 8) { showToastSetup('최대 8명까지!'); return; }
+  if (state.players.length >= 8) { showToastSetup(state.mode === 'team' ? '최대 8팀까지!' : '최대 8명까지!'); return; }
   if (state.players.some((p) => p.name === name)) { showToastSetup('같은 이름이 있어요!'); return; }
   state.players.push({
     name,
@@ -123,11 +158,18 @@ function showToastSetup(msg) {
   const input = $('#player-name');
   input.value = '';
   input.placeholder = msg;
-  setTimeout(() => { input.placeholder = '이름 입력 후 Enter'; }, 1500);
+  setTimeout(() => {
+    input.placeholder = state.mode === 'team' ? '팀 이름 입력 후 Enter' : '이름 입력 후 Enter';
+  }, 1500);
 }
 
 $('#add-player').onclick = addPlayer;
-$('#player-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') addPlayer(); });
+$('#player-name').addEventListener('keydown', (e) => {
+  // 한글 IME 조합 중 Enter는 무시 — 조합 확정 이벤트가 중복 발화되어
+  // 마지막 글자가 한 번 더 추가되는 버그 방지 (keyCode 229 = 조합 중)
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter') addPlayer();
+});
 $('#start-btn').onclick = startGame;
 
 // ══════════════════════════════════════
@@ -335,13 +377,15 @@ async function runRoulette(title, items, colors, weights) {
 // 강도는 미션 수위가 아니라 "벌주의 양"을 결정한다:
 //  - 순한맛=한 모금 / 보통=반 잔 / 매운맛=원샷 (PENALTIES 레벨)
 //  - 미션을 성공하면 강도와 무관하게 술을 마시지 않는다 (실패 시에만 벌주)
+//  - 팀전에서는 팀 전용 미션/벌주 풀 사용
 function pickMission() {
+  if (state.mode === 'team') return pick(TEAM_MISSIONS);
   return pick(PACKS[state.packId].missions);
 }
 
 function pickPenalty(level) {
   const lv = Math.min(3, Math.max(1, level));
-  return pick(PENALTIES[lv]);
+  return pick(state.mode === 'team' ? PENALTIES_TEAM[lv] : PENALTIES[lv]);
 }
 
 // 벌주 양 기본 레벨 (강도 설정 그대로)
@@ -427,7 +471,9 @@ async function resolveCell(p) {
     case 'start': {
       await showPopup({
         kind: 'chance', badge: '🏁 START', title: '시작점 정착!',
-        body: '원하는 사람 1명을 지목해 같이 건배! 🥂',
+        body: state.mode === 'team'
+          ? '원하는 팀 하나를 지목해 다같이 건배! 🥂'
+          : '원하는 사람 1명을 지목해 같이 건배! 🥂',
         buttons: [{ id: 'ok', label: '확인 ✅', primary: true }],
       });
       break;
@@ -436,7 +482,8 @@ async function resolveCell(p) {
       // 미션 성공 = 통과 (강도와 무관하게 술 없음) / 실패 시에만 벌주
       const m = pickMission();
       const choice = await showPopup({
-        kind: 'mission', badge: `🎤 미션 · ${PACKS[state.packId].name}`,
+        kind: 'mission',
+        badge: state.mode === 'team' ? '🎤 팀 미션' : `🎤 미션 · ${PACKS[state.packId].name}`,
         title: `${p.name}의 미션!`, body: m,
         sub: '성공하면 술 없이 통과! 실패하면 벌주 🍺',
         buttons: [
@@ -478,7 +525,7 @@ async function resolveCell(p) {
       const card = pick(CHANCE_CARDS);
       await showPopup({
         kind: 'chance', badge: '🃏 찬스카드', title: `${p.name}의 찬스!`,
-        body: card.t,
+        body: state.mode === 'team' && card.tt ? card.tt : card.t,
         buttons: [{ id: 'ok', label: '확인 ✅', primary: true }],
       });
       if (card.fx.immunity) { p.immunity += card.fx.immunity; renderHUD(); }
