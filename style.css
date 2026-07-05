@@ -351,7 +351,7 @@ body.shake { animation: shake .5s; }
 
 .sidebar-btns { display: flex; flex-direction: column; gap: 8px; }
 
-/* ── 오버레이 (이벤트 카드 / 룰렛 / 타이머) ── */
+/* ── 오버레이 (이벤트 카드 / 룰렛) ── */
 .overlay {
   position: fixed;
   inset: 0;
@@ -402,22 +402,6 @@ body.shake { animation: shake .5s; }
   animation: pulse .6s infinite alternate;
 }
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
-
-/* 구호 타이머 */
-.timer-count {
-  font-size: 7rem;
-  font-weight: 900;
-  color: var(--neon-yellow);
-  line-height: 1;
-  text-shadow: 0 0 30px rgba(255, 209, 102, .6);
-}
-.chant {
-  font-size: 2rem;
-  font-weight: 900;
-  color: var(--neon-blue);
-  animation: chantbounce .5s infinite alternate;
-}
-@keyframes chantbounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
 /* 룰렛 */
 .roulette-wrap { position: relative; }

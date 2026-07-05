@@ -1,7 +1,7 @@
 // ── 주루마블 메인 게임 로직 ──────────────────────────────
 import {
   PACKS, PENALTIES, CHANCE_CARDS, ALL_EVENTS, SURPRISE_EVENTS,
-  CHANTS, CELL_TYPES, BOARD, CORNERS, PLAYER_COLORS,
+  CELL_TYPES, BOARD, CORNERS, PLAYER_COLORS,
   TEAM_MISSIONS, PENALTIES_TEAM,
 } from './data.js';
 import { audio } from './audio.js';
@@ -238,7 +238,7 @@ function renderHUD() {
     row.className = 'lb-row' + (i === state.turn ? ' current' : '');
     row.innerHTML = `
       <div class="lb-dot" style="background:${pl.color}"></div>
-      <div class="lb-name">${pl.name}${pl.immunity ? ' 🎫' : ''}</div>
+      <div class="lb-name">${pl.name}${pl.immunity ? ` 🎫×${pl.immunity}` : ''}</div>
       <div class="lb-hits">🍺 ${pl.hits}</div>
       <div class="lb-lap">${pl.laps}바퀴</div>`;
     lb.appendChild(row);
@@ -267,7 +267,7 @@ function toast(msg, ms = 2200) {
 }
 
 // ══════════════════════════════════════
-// 4. 팝업 / 구호 타이머 / 룰렛 오버레이
+// 4. 팝업 / 룰렛 오버레이
 // ══════════════════════════════════════
 const THEME = {
   mission: { color: '#4cc9f0', glow: 'rgba(76,201,240,.35)' },
@@ -310,41 +310,6 @@ function showPopup({ kind = 'mission', badge, title, body, sub, buttons }) {
 }
 
 function hideOverlay() { $('#overlay').classList.add('hidden'); }
-
-// 구호 타이머: 카운트다운 + 응원 문구 자동 표시
-function runChantTimer(seconds = 10, missionText = '') {
-  return new Promise((resolve) => {
-    setOverlayTheme('penalty');
-    const card = $('#overlay-card');
-    card.innerHTML = `
-      <div class="oc-badge">📣 다같이 구호!</div>
-      ${missionText ? `<div class="oc-sub">${missionText}</div>` : ''}
-      <div class="timer-count" id="timer-count">${seconds}</div>
-      <div class="chant" id="chant-text">${pick(CHANTS)}</div>
-      <div class="oc-btns"><button class="big-btn" id="timer-done">완료! ✅</button></div>`;
-    $('#overlay').classList.remove('hidden');
-
-    audio.drumroll(seconds);
-    let left = seconds;
-    const countEl = $('#timer-count');
-    const chantEl = $('#chant-text');
-
-    const iv = setInterval(() => {
-      left--;
-      if (left >= 0) countEl.textContent = left;
-      if (left > 0 && left % 3 === 0) chantEl.textContent = pick(CHANTS);
-      if (left <= 0) finish();
-    }, 1000);
-
-    const finish = () => {
-      clearInterval(iv);
-      audio.fanfare();
-      hideOverlay();
-      resolve();
-    };
-    $('#timer-done').onclick = finish;
-  });
-}
 
 // 룰렛 오버레이: 자동 스핀 후 선택된 항목 resolve (weights: 조각별 당첨 확률 가중치)
 async function runRoulette(title, items, colors, weights) {
@@ -427,6 +392,25 @@ async function movePlayer(p, steps) {
   renderHUD();
 }
 
+// 전체 벌주(전체 이벤트/떼벌칙)에서 면제권 보유자는 자동으로 1장 쓰고 제외된다
+function immunityExemptNote() {
+  const exempt = state.players.filter((pl) => pl.immunity > 0);
+  return exempt.length
+    ? `🎫 면제권 자동 사용으로 제외: ${exempt.map((e) => e.name).join(', ')}`
+    : '';
+}
+
+function applyGroupHit() {
+  state.players.forEach((pl) => {
+    if (pl.immunity > 0) {
+      pl.immunity--;
+      state.log.push(`${state.turnCount}턴 · ${pl.name}: 면제권으로 전체 벌주 회피! 🎫`);
+    } else {
+      pl.hits++;
+    }
+  });
+}
+
 // 걸림 처리 (통계/콤보)
 function registerHit(p, note) {
   p.hits++;
@@ -436,15 +420,14 @@ function registerHit(p, note) {
   renderHUD();
 }
 
-// 미션/벌칙 공통 팝업 흐름: 면제권 → 타이머 → 완료/건너뛰기
+// 미션/벌칙 공통 팝업 흐름: 완료 / 면제권 / 건너뛰기
 async function runChallenge(p, { kind, badge, title, body, sub }) {
   const buttons = [
-    { id: 'timer', label: '📣 구호 타이머', primary: true },
-    { id: 'done', label: '완료 ✅' },
+    { id: 'done', label: '완료 ✅', primary: true },
     { id: 'skip', label: '건너뛰기 ⏭' },
   ];
   if (p.immunity > 0 && kind === 'penalty') {
-    buttons.splice(2, 0, { id: 'immunity', label: `면제권 사용 🎫 (${p.immunity}장)` });
+    buttons.splice(1, 0, { id: 'immunity', label: `면제권 사용 🎫 (${p.immunity}장)` });
   }
   const choice = await showPopup({ kind, badge, title, body, sub, buttons });
 
@@ -457,7 +440,6 @@ async function runChallenge(p, { kind, badge, title, body, sub }) {
     return;
   }
   if (choice === 'skip') { p.streak = 0; return; }
-  if (choice === 'timer') await runChantTimer(10, body);
   registerHit(p, body.replace(/<[^>]*>/g, ''));
 }
 
@@ -547,16 +529,13 @@ async function resolveCell(p) {
     }
     case 'all': {
       const ev = pick(ALL_EVENTS);
-      const choice = await showPopup({
+      await showPopup({
         kind: 'all', badge: '🍻 전체 이벤트', title: '다같이!',
         body: ev,
-        buttons: [
-          { id: 'timer', label: '📣 구호 타이머', primary: true },
-          { id: 'done', label: '완료 ✅' },
-        ],
+        sub: immunityExemptNote(),
+        buttons: [{ id: 'done', label: '완료 ✅', primary: true }],
       });
-      if (choice === 'timer') await runChantTimer(8, ev);
-      state.players.forEach((pl) => { pl.hits++; });
+      applyGroupHit();
       state.log.push(`${state.turnCount}턴 · 전체 이벤트: ${ev}`);
       renderHUD();
       break;
@@ -652,10 +631,11 @@ async function maybeSurprise() {
   await showPopup({
     kind: 'surprise', badge: '⚡ 서프라이즈', title: '히든 이벤트 발동!',
     body: ev.t,
+    sub: ev.allHit ? immunityExemptNote() : '',
     buttons: [{ id: 'ok', label: '받아들인다… ✅', primary: true }],
   });
   if (ev.allHit) {
-    state.players.forEach((pl) => { pl.hits++; });
+    applyGroupHit();
     renderHUD();
   }
   state.log.push(`${state.turnCount}턴 · ⚡ ${ev.t}`);
