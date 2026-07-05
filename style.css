@@ -434,6 +434,7 @@ body.shake { animation: shake .5s; }
 }
 
 .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-weight: 700; font-size: 1.1rem; }
+.stat-rank { width: 42px; font-weight: 900; color: var(--neon-yellow); text-align: center; flex-shrink: 0; }
 .stat-name { width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stat-bar-track { flex: 1; background: var(--bg-cell); border-radius: 8px; height: 26px; overflow: hidden; }
 .stat-bar { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: .9rem; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); min-width: 30px; transition: width 1s ease; }

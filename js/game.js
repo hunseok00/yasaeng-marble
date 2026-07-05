@@ -709,27 +709,31 @@ function finishGame() {
   hideOverlay();
   audio.fanfare();
 
-  const sorted = [...state.players].sort((a, b) => b.hits - a.hits);
-  const mvp = sorted[0];
-  const survivor = sorted[sorted.length - 1];
+  // 등수: 벌칙을 적게 받은 순 (1위 = 최소 벌칙)
+  const ranked = [...state.players].sort((a, b) => a.hits - b.hits);
+  const winner = ranked[0];
+  const mostHit = ranked[ranked.length - 1];
   const comboKing = [...state.players].sort((a, b) => b.maxStreak - a.maxStreak)[0];
 
   $('#mvp').innerHTML = `
     <div class="crown">👑</div>
-    <div class="mvp-name">${mvp.name}</div>
-    <div class="mvp-desc">오늘의 MVP — 총 ${mvp.hits}번 당첨! 큰 박수 부탁드립니다 👏</div>`;
+    <div class="mvp-name">${winner.name}</div>
+    <div class="mvp-desc">🏆 우승 — 벌칙 ${winner.hits}번으로 최소! 큰 박수 부탁드립니다 👏</div>`;
 
-  const maxHits = Math.max(1, mvp.hits);
+  const maxHits = Math.max(1, mostHit.hits);
   const stats = $('#stats');
   stats.innerHTML = '';
-  sorted.forEach((p) => {
+  ranked.forEach((p) => {
+    // 동점자는 같은 등수 (예: 1위, 1위, 3위)
+    const rank = 1 + ranked.filter((o) => o.hits < p.hits).length;
     const awards = [];
-    if (p === mvp && p.hits > 0) awards.push('🍺 MVP');
-    if (p === survivor) awards.push('🛡️ 생존왕');
+    if (rank === 1) awards.push('🏆 우승');
+    if (p === mostHit && p.hits > 0 && p.hits > winner.hits) awards.push('🍺 최다 벌칙');
     if (p === comboKing && p.maxStreak >= 2) awards.push(`🔥 콤보왕 x${p.maxStreak}`);
     const row = document.createElement('div');
     row.className = 'stat-row';
     row.innerHTML = `
+      <div class="stat-rank">${rank}위</div>
       <div class="stat-name" style="color:${p.color}">${p.name}</div>
       <div class="stat-bar-track">
         <div class="stat-bar" style="background:${p.color}; width:${(p.hits / maxHits) * 100}%">${p.hits}</div>
