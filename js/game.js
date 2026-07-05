@@ -3,6 +3,7 @@ import {
   PACKS, PENALTIES, CHANCE_CARDS, ALL_EVENTS, SURPRISE_EVENTS,
   CELL_TYPES, BOARD, CORNERS, PLAYER_COLORS,
   TEAM_MISSIONS, PENALTIES_TEAM,
+  TELEPATHY_TOPICS, CHOSEONG, CHARADES_WORDS,
 } from './data.js';
 import { audio } from './audio.js';
 import { Roulette } from './roulette.js';
@@ -344,8 +345,17 @@ async function runRoulette(title, items, colors, weights) {
 //  - 미션을 성공하면 강도와 무관하게 술을 마시지 않는다 (실패 시에만 벌주)
 //  - 팀전에서는 팀 전용 미션/벌주 풀 사용
 function pickMission() {
-  if (state.mode === 'team') return pick(TEAM_MISSIONS);
-  return pick(PACKS[state.packId].missions);
+  if (state.mode !== 'team') return pick(PACKS[state.packId].missions);
+
+  const m = pick(TEAM_MISSIONS);
+  // 다이나믹 미션: 뽑히는 순간 내용 랜덤 생성 ('@charades'는 mission 케이스에서 2단계 공개로 처리)
+  if (m === '@telepathy') {
+    return `팀 텔레파시! ${pick(TELEPATHY_TOPICS)}<br>팀 전원이 동시에 외치기 — 3번 안에 일치 실패 시 벌주`;
+  }
+  if (m === '@choseong') {
+    return `초성게임 릴레이! 「${pick(CHOSEONG)}${pick(CHOSEONG)}」<br>팀원이 돌아가며 답하고, 바로 말하지 못하면 벌주 🍺`;
+  }
+  return m;
 }
 
 function pickPenalty(level) {
@@ -462,7 +472,19 @@ async function resolveCell(p) {
     }
     case 'mission': {
       // 미션 성공 = 통과 (강도와 무관하게 술 없음) / 실패 시에만 벌주
-      const m = pickMission();
+      let m = pickMission();
+
+      // 몸으로 말해요: 맞추는 팀원들이 제시어를 못 보게 2단계로 공개
+      if (m === '@charades') {
+        await showPopup({
+          kind: 'mission', badge: '🎤 팀 미션', title: '몸으로 말해요! 🦍',
+          body: '표현할 팀원 1명만 남고<br>나머지 팀원은 뒤돌아주세요 🙈',
+          sub: '준비되면 제시어를 공개하세요',
+          buttons: [{ id: 'reveal', label: '제시어 공개 👀', primary: true }],
+        });
+        m = `제시어 「${pick(CHARADES_WORDS)}」<br>몸으로만 표현! 나머지 팀원이 30초 안에 맞추면 성공 🦍`;
+      }
+
       const choice = await showPopup({
         kind: 'mission',
         badge: state.mode === 'team' ? '🎤 팀 미션' : `🎤 미션 · ${PACKS[state.packId].name}`,
