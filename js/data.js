@@ -178,13 +178,8 @@ export const PENALTIES = {
   ],
 };
 
-// 찬스카드 — fx: move(칸 이동) / immunity(면제권) / again(한 번 더)
+// 찬스카드 — fx: immunity(면제권) / again(한 번 더)
 export const CHANCE_CARDS = [
-  { t: '순풍이 분다! 앞으로 3칸 전진 🌬', fx: { move: 3 } },
-  { t: '야생마의 질주! 앞으로 5칸 전진 🐎', fx: { move: 5 } },
-  { t: '앞으로 1칸 전진! 🚶', fx: { move: 1 } },
-  { t: '미끄러졌다… 뒤로 2칸 😵', fx: { move: -2 } },
-  { t: '과음 경보! 뒤로 3칸 후퇴 🚨', fx: { move: -3 } },
   { t: '벌칙 면제권 획득! 🎫 (다음 벌칙 1회 패스)', fx: { immunity: 1 } },
   { t: '기세를 몰아 한 번 더 굴리기! 🎲🎲', fx: { again: true } },
   { t: '전체 건배! 다같이 한 모금 🥂', fx: {} },
