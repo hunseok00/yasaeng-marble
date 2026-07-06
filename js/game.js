@@ -377,7 +377,7 @@ async function rollDice() {
   const value = 1 + Math.floor(Math.random() * 6);
   for (let i = 0; i < 10; i++) {
     diceEl.textContent = faces[Math.floor(Math.random() * 6)];
-    await sleep(56);
+    await sleep(112);
   }
   diceEl.classList.remove('rolling');
   diceEl.textContent = faces[value - 1];
@@ -397,7 +397,7 @@ async function movePlayer(p, steps) {
     renderTokens();
     highlightCell(p.pos);
     audio.tick();
-    await sleep(192);
+    await sleep(384);
   }
   renderHUD();
 }
@@ -676,7 +676,7 @@ async function takeTurn() {
     await maybeSurprise();
     const steps = await rollDice();
     toast(`${p.name} → ${steps}칸 전진!`);
-    await sleep(400);
+    await sleep(800); // 확정된 주사위 숫자를 보여주는 시간
     await movePlayer(p, steps);
     await sleep(300);
 
