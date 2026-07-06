@@ -377,7 +377,7 @@ async function rollDice() {
   const value = 1 + Math.floor(Math.random() * 6);
   for (let i = 0; i < 10; i++) {
     diceEl.textContent = faces[Math.floor(Math.random() * 6)];
-    await sleep(70);
+    await sleep(56);
   }
   diceEl.classList.remove('rolling');
   diceEl.textContent = faces[value - 1];
@@ -397,7 +397,7 @@ async function movePlayer(p, steps) {
     renderTokens();
     highlightCell(p.pos);
     audio.tick();
-    await sleep(240);
+    await sleep(192);
   }
   renderHUD();
 }
